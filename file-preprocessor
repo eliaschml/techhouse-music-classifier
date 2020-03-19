@@ -1,0 +1,40 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from glob import glob
+import librosa as lr
+from scipy import signal
+
+# Set directory for source files
+data_dir = r'C:\Users\gahee\Desktop\Audio_test_py'
+audio_files = glob(data_dir + '/*.mp3')
+print('You have imported:'+str(len(audio_files))+' files')
+
+def read_audio(filename,plot=False):
+    audio_arr,sam_freq = lr.load(filename)
+    time_ref = np.arange(0,len(audio_arr))/sam_freq
+    if plot==True:
+        fig, ax = plt.subplots()
+        ax.plot(time_ref,audio_arr)
+        ax.set(xlabel='Time in [s]',ylabel='Amplitude')
+        plt.show()
+    return time_ref, audio_arr, sam_freq
+
+# Read file and create time array
+audio_array=[]
+sam_freq = []
+time_ref = []
+for ind,file_path in enumerate(audio_files):
+    print('ind: ' + str(ind))
+    print('file_path: ' + file_path)
+    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,plot=True)
+    audio_array.append(audio_tmp)
+    sam_freq.append(sam_freq_tmp)
+    time_ref.append(time_ref_tmp)
+
+#use librosa to find beats & tempo and then plot the beats on the time axis 
+tempo, beats = lr.beat.beat_track(audio_array[0], sam_freq[0], units = 'time') #no start bpm    
+plt.plot(audio_array[0])
+for beat in beats[0::4]:
+    plt.axvline(x=beat*sam_freq[0], color='r')
