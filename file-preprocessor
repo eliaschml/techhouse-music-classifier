@@ -49,12 +49,15 @@ time_ref = []
 spectros = []
 harmos = []
 percos = []
+sample_duration = 60
+sample_offset = 60
+hpss_beta = 3
 
 for ind,file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
     print('file_path: ' + file_path)
     #read audio file
-    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,duration = 30 , offset = 60, plot=False)
+    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,duration = sample_duration, offset = sample_offset, plot=False)
     audio_array.append(audio_tmp)
     sam_freq.append(sam_freq_tmp)
     time_ref.append(time_ref_tmp)
@@ -64,11 +67,14 @@ for ind,file_path in enumerate(audio_files):
     spectros.append(spectros_tmp)
     
     #harmonic percussion spectral separation
-    harmos_tmp, percos_tmp = lr.decompose.hpss(spectros_tmp, margin = 1.5)
+    harmos_tmp, percos_tmp = lr.decompose.hpss(spectros_tmp, margin = hpss_beta)
     resos_tmp = spectros_tmp - (harmos_tmp+percos_tmp)
     harmos.append(harmos_tmp)
     percos.append(percos_tmp)
     resos.append(resos_tmp)
+    
+    #hpss plotting
+    plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
     
     #hpss plotting
     plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
