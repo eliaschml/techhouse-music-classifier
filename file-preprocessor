@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from glob import glob
 import librosa as lr
+from librosa import display as lrdisp
 from scipy import signal
 
 # Set directory for source files
@@ -11,6 +12,7 @@ data_dir = r'C:\Users\gahee\Desktop\Audio_test_py'
 audio_files = glob(data_dir + '/*.mp3')
 print('You have imported:'+str(len(audio_files))+' files')
 
+#read/plot audio method
 def read_audio(filename,plot=False):
     audio_arr,sam_freq = lr.load(filename)
     time_ref = np.arange(0,len(audio_arr))/sam_freq
@@ -20,6 +22,25 @@ def read_audio(filename,plot=False):
         ax.set(xlabel='Time in [s]',ylabel='Amplitude')
         plt.show()
     return time_ref, audio_arr, sam_freq
+
+#plot hpss spectrogam method    
+def plot_spectro(H,P,R):
+    fig_spectros,ax_spectros = plt.subplots()
+
+    plt.subplot(3,1,1)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(H), ref=np.max), y_axis = 'log')
+    plt.colorbar(format = '%+2.0f dB')
+    plt.title('Harmo')
+
+    plt.subplot(3,1,2)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(P), ref=np.max), y_axis = 'log')
+    plt.colorbar(format = '%+2.0f dB')
+    plt.title('Perco')
+
+    plt.subplot(3,1,3)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(R), ref=np.max), y_axis = 'log')
+    plt.colorbar(format = '%+2.0f dB')
+    plt.title('Reso')
 
 # Read file and create time array
 audio_array=[]
