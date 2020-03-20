@@ -13,8 +13,8 @@ audio_files = glob(data_dir + '/*.mp3')
 print('You have imported:'+str(len(audio_files))+' files')
 
 #read/plot audio method
-def read_audio(filename,plot=False):
-    audio_arr,sam_freq = lr.load(filename)
+def read_audio(filename,duration = None, offset = None,plot=False):
+    audio_arr,sam_freq = lr.load(filename,duration = duration)
     time_ref = np.arange(0,len(audio_arr))/sam_freq
     if plot==True:
         fig, ax = plt.subplots()
