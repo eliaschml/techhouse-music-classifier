@@ -46,13 +46,33 @@ def plot_spectro(H,P,R):
 audio_array=[]
 sam_freq = []
 time_ref = []
+spectros = []
+harmos = []
+percos = []
+
 for ind,file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
     print('file_path: ' + file_path)
-    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,plot=True)
+    #read audio file
+    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,duration = 30 , offset = 60, plot=False)
     audio_array.append(audio_tmp)
     sam_freq.append(sam_freq_tmp)
     time_ref.append(time_ref_tmp)
+    
+    #full signal spectrogram
+    spectros_tmp = lr.stft(audio_tmp)
+    spectros.append(spectros_tmp)
+    
+    #harmonic percussion spectral separation
+    harmos_tmp, percos_tmp = lr.decompose.hpss(spectros_tmp, margin = 1.5)
+    resos_tmp = spectros_tmp - (harmos_tmp+percos_tmp)
+    harmos.append(harmos_tmp)
+    percos.append(percos_tmp)
+    resos.append(resos_tmp)
+    
+    #hpss plotting
+    plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
+    
 
 #use librosa to find beats & tempo and then plot the beats on the time axis 
 tempo, beats = lr.beat.beat_track(audio_array[0], sam_freq[0], units = 'time') #no start bpm    
