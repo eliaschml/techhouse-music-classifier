@@ -8,7 +8,7 @@ from librosa import display as lrdisp
 from scipy import signal
 
 # Set directory for source files
-data_dir = r'C:\Users\gahee\Desktop\Audio_test_py'
+data_dir = r'D:\Users\Cygnus\Desktop\audio_preproc'
 audio_files = glob(data_dir + '/*.mp3')
 print('You have imported:'+str(len(audio_files))+' files')
 
@@ -41,6 +41,10 @@ def plot_spectro(H,P,R):
     lrdisp.specshow(lr.amplitude_to_db(np.abs(R), ref=np.max), y_axis = 'log')
     plt.colorbar(format = '%+2.0f dB')
     plt.title('Reso')
+    
+def rel_dens(s1,s2):
+    rel_dens= sum(sum(abs(s1/s2)))/(s1.size)
+    return rel_dens
 
 # Read file and create time array
 audio_array=[]
@@ -49,9 +53,14 @@ time_ref = []
 spectros = []
 harmos = []
 percos = []
+resos = []
+
+harm_dens = []
+perc_dens = []
+res_dens = []
 sample_duration = 60
 sample_offset = 60
-hpss_beta = 3
+hpss_beta = 1
 
 for ind,file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
@@ -67,21 +76,25 @@ for ind,file_path in enumerate(audio_files):
     spectros.append(spectros_tmp)
     
     #harmonic percussion spectral separation
-    harmos_tmp, percos_tmp = lr.decompose.hpss(spectros_tmp, margin = hpss_beta)
+    harmos_tmp, percos_tmp= lr.decompose.hpss(spectros_tmp, margin = hpss_beta)
     resos_tmp = spectros_tmp - (harmos_tmp+percos_tmp)
     harmos.append(harmos_tmp)
     percos.append(percos_tmp)
+    resos_tmp = spectros_tmp - (harmos_tmp + percos_tmp)
     resos.append(resos_tmp)
     
-    #hpss plotting
-    plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
+    #Calculate respective densities
+    harm_dens.append(rel_dens(harmos_tmp,spectros_tmp))
+    perc_dens.append(rel_dens(percos_tmp,spectros_tmp))
+    res_dens.append(rel_dens(resos_tmp,spectros_tmp))
     
     #hpss plotting
     plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
+    
     
 
-#use librosa to find beats & tempo and then plot the beats on the time axis 
-tempo, beats = lr.beat.beat_track(audio_array[0], sam_freq[0], units = 'time') #no start bpm    
-plt.plot(audio_array[0])
-for beat in beats[0::4]:
-    plt.axvline(x=beat*sam_freq[0], color='r')
+##use librosa to find beats & tempo and then plot the beats on the time axis 
+#tempo, beats = lr.beat.beat_track(audio_array[0], sam_freq[0], units = 'time') #no start bpm    
+#plt.plot(audio_array[0])
+#for beat in beats[0::4]:
+#    plt.axvline(x=beat*sam_freq[0], color='r')
