@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from glob import glob
 import librosa as lr
 from librosa import display as lrdisp
+from librosa import feature
 from scipy import signal
 
 # Set directory for source files
@@ -43,9 +44,33 @@ def plot_spectro(H,P,R):
     plt.title('Reso')
     
 def rel_dens(s1,s2):
+    #skipping spectros 0 values because spectros = 0 -> H,P,R = 0 and gives nan 
+    s2 = np.where(s2 != 0, s2, 1)
     rel_dens= sum(sum(abs(s1/s2)))/(s1.size)
     return rel_dens
 
+def chroma_cqt(audio_sig,sam_freq,fmin,threshold = 0.0):
+    hop_length = 512
+    cqt_chromagram = lr.feature.chroma_cqt(audio_sig, sr = sam_freq, hop_length = hop_length, threshold = threshold)
+    return cqt_chromagram
+
+def plot_chromas(cqt_chromagram,sam_freq):
+    plt.figure()
+    lrdisp.specshow(cqt_chromagram, sr=sam_freq, x_axis = 'time', y_axis = 'chroma',fmin = fmin, cmap = 'coolwarm')
+    
+def bar_chromas(cqt_chromagram):
+    notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    fig_c = plt.figure()
+    ax_c = fig_c.add_axes([0,0,1,1])
+    ax_c.bar(notes, np.sum(cqt_chromagram,1))
+
+def harm_order(cqt_chromas):
+    chroma_tot  = np.sum(cqt_chromas,1)
+    argus = np.argsort(chroma_tot)
+    s = ''.join(map(str, argus))
+    return int(s)
+    
+    
 # Read file and create time array
 audio_array=[]
 sam_freq = []
@@ -58,9 +83,13 @@ resos = []
 harm_dens = []
 perc_dens = []
 res_dens = []
-sample_duration = 60
-sample_offset = 60
-hpss_beta = 1
+
+sample_duration = 50
+sample_offset = None
+hpss_beta = 1.2
+fmin = lr.midi_to_hz(21)
+
+cqt_chromas = []
 
 for ind,file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
@@ -89,12 +118,10 @@ for ind,file_path in enumerate(audio_files):
     res_dens.append(rel_dens(resos_tmp,spectros_tmp))
     
     #hpss plotting
-    plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
+#    plot_spectro(harmos_tmp,percos_tmp,resos_tmp)
     
+    cqt_chromas.append(chroma_cqt(audio_tmp, sam_freq_tmp,fmin,threshold = 0.7))
     
+    harm_id.append(harm_order(cqt_chromas[ind]))
 
-##use librosa to find beats & tempo and then plot the beats on the time axis 
-#tempo, beats = lr.beat.beat_track(audio_array[0], sam_freq[0], units = 'time') #no start bpm    
-#plt.plot(audio_array[0])
-#for beat in beats[0::4]:
-#    plt.axvline(x=beat*sam_freq[0], color='r')
+#    plot_chromas(cqt_chromas[ind],sam_freq_tmp)
