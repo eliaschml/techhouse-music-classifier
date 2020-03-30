@@ -7,10 +7,11 @@ import librosa as lr
 from librosa import display as lrdisp
 from librosa import feature
 from scipy import signal
+import eyed3
 
 # Set directory for source files
-data_dir = r'D:\Users\Cygnus\Desktop\audio_preproc'
-audio_files = glob(data_dir + '/*.mp3')
+data_dir = r'D:\Users\Cygnus\Desktop\Radio TracksS_Labeled'
+audio_files = glob(data_dir + '/**/*.mp3',recursive = True)
 print('You have imported:'+str(len(audio_files))+' files')
 
 #read/plot audio method
@@ -69,9 +70,35 @@ def harm_order(cqt_chromas):
     argus = np.argsort(chroma_tot)
     s = ''.join(map(str, argus))
     return int(s)
+
+def make_dic(file_path,bpm,harm_dens, res_dens, perc_dens, harm_id, genre):
+    temp_dic = {'file_path' : file_path,
+                'bpm' : bpm,
+                'harm_dens' : harm_dens, 
+                'res_dens' : res_dens,
+                'perc_dens' : perc_dens,
+                'harm_id' : harm_id,
+                'genre' : genre
+                }
+    return temp_dic
+
+def plot_densdist(ind,harm_dens,res_dens,perc_dens):
+    fig_dens,ax_dens = plt.subplots()
+    plt.subplot(3,1,1)
+    plt.plot(ind,harm_dens,'b+')
+    
+    fig_dens,ax_dens = plt.subplots()
+    plt.subplot(3,1,1)
+    plt.plot(ind,res_dens,'r+')
+    
+    fig_dens,ax_dens = plt.subplots()
+    plt.subplot(3,1,1)
+    plt.plot(ind,perc_dens,'k+')
+    plt.show()
     
     
 # Read file and create time array
+file_pathlog = []
 audio_array=[]
 sam_freq = []
 time_ref = []
@@ -80,13 +107,20 @@ harmos = []
 percos = []
 resos = []
 
+bpm = []
+
+genre = []
+
 harm_dens = []
 perc_dens = []
 res_dens = []
+harm_id = []
 
-sample_duration = 50
-sample_offset = None
-hpss_beta = 1.2
+data = pd.DataFrame()
+
+sample_duration = 20
+sample_offset = 60
+hpss_beta = 1.5
 fmin = lr.midi_to_hz(21)
 
 cqt_chromas = []
@@ -95,10 +129,13 @@ for ind,file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
     print('file_path: ' + file_path)
     #read audio file
+    file_pathlog.append(file_path)
     time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,duration = sample_duration, offset = sample_offset, plot=False)
     audio_array.append(audio_tmp)
     sam_freq.append(sam_freq_tmp)
     time_ref.append(time_ref_tmp)
+    
+    bpm.append(lr.beat.tempo(audio_tmp, sam_freq_tmp)) 
     
     #full signal spectrogram
     spectros_tmp = lr.stft(audio_tmp)
@@ -125,3 +162,19 @@ for ind,file_path in enumerate(audio_files):
     harm_id.append(harm_order(cqt_chromas[ind]))
 
 #    plot_chromas(cqt_chromas[ind],sam_freq_tmp)
+    audiofile = eyed3.load(file_path)
+    genre.append(audiofile.tag.genre._name)
+
+
+data = pd.DataFrame(data = make_dic(file_pathlog, bpm, harm_dens, res_dens, perc_dens, harm_id, genre))
+
+plot_densdist(data.index.tolist(), data['harm_dens'], data['res_dens'], data['perc_dens'])
+
+data.to_pickle("./data_set_beta_1p5_20s.pkl")
+
+#data1 = pd.read_pickle("./data_set_beta_1p5.pkl")
+#plot_densdist(data1.index.tolist(), data1['harm_dens'], data1['res_dens'], data1['perc_dens'])
+#data2 = pd.read_pickle("./data_set_beta_2.pkl")
+#plot_densdist(data2.index.tolist(), data2['harm_dens'], data2['res_dens'], data2['perc_dens'])
+#data3 = pd.read_pickle("./data_set_beta_4.pkl")
+#plot_densdist(data3.index.tolist(), data3['harm_dens'], data3['res_dens'], data3['perc_dens'])
