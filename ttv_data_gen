@@ -19,7 +19,7 @@ for i,col in enumerate(['res_dens','perc_dens','harm_dens','bpm','harm_id']):
     plt.figure(i)
     sns.catplot(x='genre', y=col, data = songs)
 
-features = songs.drop('genre', axis =1)
+features = songs.drop(['file_path','genre'], axis =1)
 labels = songs['genre']
 
 features,labels = shuffle(features,labels) 
