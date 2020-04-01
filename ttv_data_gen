@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
@@ -11,7 +12,6 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 songs = pd.read_pickle("./data_set_beta_1p5_20s.pkl")
-songs=songs.replace(to_replace = 'Tech-house',value = 'House' )
 songs.head()
 
 #no null values
@@ -19,8 +19,10 @@ for i,col in enumerate(['res_dens','perc_dens','harm_dens','bpm','harm_id']):
     plt.figure(i)
     sns.catplot(x='genre', y=col, data = songs)
 
-features = songs.drop(['file_path','genre'], axis =1)
+features = songs.drop('genre', axis =1)
 labels = songs['genre']
+
+features,labels = shuffle(features,labels) 
 
 x_train, x_test, y_train, y_test = train_test_split(features, labels, test_size=0.4)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
