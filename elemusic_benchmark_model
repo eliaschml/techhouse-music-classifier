@@ -12,3 +12,4 @@ rf = RandomForestClassifier()
 scores = cross_val_score(rf, tr_features, tr_labels,cv=5)
 
 print(scores)
+#
