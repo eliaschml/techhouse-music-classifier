@@ -73,6 +73,7 @@ def harm_order(cqt_chromas):
     for i in range(1,len(levels_norm)):
         level_diff.append(levels_norm[i-1]-levels_norm[i])
     level_diff_avg = np.mean(level_diff)
+    harm_id_ind = len(levels_norm)
     for i in range(len(level_diff)):
         if level_diff[i] >= level_diff_avg:
             harm_id_ind = i
