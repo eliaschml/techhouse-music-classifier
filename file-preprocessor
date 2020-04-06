@@ -67,9 +67,19 @@ def bar_chromas(cqt_chromagram):
 
 def harm_order(cqt_chromas):
     chroma_tot  = np.sum(cqt_chromas,1)
-    argus = np.argsort(chroma_tot)
-    s = ''.join(map(str, argus))
-    return int(s)
+    levels = np.sort(-1*chroma_tot)
+    levels_norm = -1*levels/np.max(np.abs(levels))
+    level_diff = []
+    for i in range(1,len(levels_norm)):
+        level_diff.append(levels_norm[i-1]-levels_norm[i])
+    level_diff_avg = np.mean(level_diff)
+    for i in range(len(level_diff)):
+        if level_diff[i] >= level_diff_avg:
+            harm_id_ind = i
+    argus = np.argsort(-1*chroma_tot)
+    argus = argus +1
+    harm_id = np.mean(np.multiply(argus[0:harm_id_ind],levels_norm[0:harm_id_ind]))
+    return harm_id
 
 def make_dic(file_path,bpm,harm_dens, res_dens, perc_dens, harm_id, genre):
     temp_dic = {'file_path' : file_path,
@@ -170,11 +180,4 @@ data = pd.DataFrame(data = make_dic(file_pathlog, bpm, harm_dens, res_dens, perc
 
 plot_densdist(data.index.tolist(), data['harm_dens'], data['res_dens'], data['perc_dens'])
 
-data.to_pickle("./data_set_beta_1p5_20s.pkl")
-
-#data1 = pd.read_pickle("./data_set_beta_1p5.pkl")
-#plot_densdist(data1.index.tolist(), data1['harm_dens'], data1['res_dens'], data1['perc_dens'])
-#data2 = pd.read_pickle("./data_set_beta_2.pkl")
-#plot_densdist(data2.index.tolist(), data2['harm_dens'], data2['res_dens'], data2['perc_dens'])
-#data3 = pd.read_pickle("./data_set_beta_4.pkl")
-#plot_densdist(data3.index.tolist(), data3['harm_dens'], data3['res_dens'], data3['perc_dens'])
+data.to_pickle("./data_set_beta_1p5_20s_v2.0.pkl")
