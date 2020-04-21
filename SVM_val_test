@@ -1,0 +1,40 @@
+# Validation 
+import pandas as pd
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score,confusion_matrix
+
+tr_features = pd.read_pickle('./train_features.pkl')
+tr_labels = pd.read_pickle('./train_labels.pkl')
+
+val_features = pd.read_pickle('./val_features.pkl')
+val_labels = pd.read_pickle('./val_labels.pkl')
+
+te_features = pd.read_pickle('./test_features.pkl')
+te_labels = pd.read_pickle('./test_labels.pkl')
+                           
+svc1 = SVC(C=1,decision_function_shape = 'ovo' )
+svc1.fit(tr_features, tr_labels.values.ravel())
+
+svc2 = SVC(C=10,decision_function_shape = 'ovo' )
+svc2.fit(tr_features, tr_labels.values.ravel())
+
+svc3 = SVC(C=100,decision_function_shape = 'ovo' )
+svc3.fit(tr_features, tr_labels.values.ravel())
+
+for mdl in [svc1, svc2, svc3]:
+    y_pred = mdl.predict(val_features)
+    accuracy = accuracy_score(val_labels, y_pred)
+    precision = precision_score(val_labels, y_pred, average=None)
+    recall = recall_score(val_labels, y_pred, average=None)
+    conf_mat = confusion_matrix(val_labels, y_pred, labels = ["Techno","House","Breakbeat", "Ambient"])
+    print(' \n-- A: {} / P: {} / R: {}'.format(accuracy,precision, recall))
+    print(conf_mat)
+
+##test
+y_pred = svc1.predict(te_features)
+accuracy = accuracy_score(te_labels, y_pred)
+precision = precision_score(te_labels, y_pred, average=None)
+recall = recall_score(te_labels, y_pred, average=None)
+conf_mat = confusion_matrix(te_labels, y_pred, labels = ["Techno","House","Breakbeat", "Ambient"])
+print(' \n-- A: {} / P: {} / R: {}'.format(accuracy,precision, recall))
+print(conf_mat) 
