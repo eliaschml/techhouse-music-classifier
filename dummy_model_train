@@ -1,0 +1,17 @@
+import pandas as pd 
+from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import cross_val_score
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+tr_features = pd.read_pickle("./train_features.pkl")
+tr_labels = pd.read_pickle("./train_labels.pkl")
+
+val_features = pd.read_pickle("./val_features.pkl")
+val_labels = pd.read_pickle("./val_features.pkl")
+
+dy = DummyClassifier() #stratified dummy model
+
+scores = cross_val_score(dy, tr_features, tr_labels,cv=5)
+
+print(scores)
