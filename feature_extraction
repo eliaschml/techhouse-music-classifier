@@ -1,173 +1,184 @@
+#  Electronic Music Classifier:
+#       song feature extraction
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import ListedColormap
 from glob import glob
 import librosa as lr
 from librosa import display as lrdisp
-from librosa import feature
-from scipy import signal
 import eyed3
 
-#%% Set directory for source files
+#  Set directory for source files
 data_dir = r'C:\Users\gahee\OneDrive - 서울대학교\Elias\Admin\Cochlear\laptopfiles\audio_preproc\test\\'
-audio_files = glob(data_dir + '/**/*.mp3',recursive = True)
-print('You have imported:'+str(len(audio_files))+' files')
+audio_files = glob(data_dir + '/**/*.mp3', recursive=True)
+print('You have imported:' + str(len(audio_files)) + ' files')
 
-#%% methods to use
-# make custom colormaps
-# choose colormap & output transparent version for spectrogram overlay
-def alpha_cmap(default_cmap, cmap_name = 'Reds'):
+
+#  methods to use
+#  make custom colormaps
+#  choose colormap & output transparent version for spectrogram overlay
+def alpha_cmap(default_cmap, cmap_name='Reds'):
     cmap = plt.cm.get_cmap(default_cmap)
     # Get the colormap colors
     my_cmap = cmap(np.arange(cmap.N))
     # Set alpha
-    my_cmap[:,-1] = np.linspace(0, 1, cmap.N)
+    my_cmap[:, -1] = np.linspace(0, 1, cmap.N)
     # Create new colormap
     my_cmap = ListedColormap(my_cmap, cmap_name)
     return my_cmap
-#output transparent cmaps
+
+
+#  output transparent cmaps
 reds_alpha = alpha_cmap('Reds')
 blues_alpha = alpha_cmap('Blues')
 
-# audiofile read/plot method
-def read_audio(filename,duration = None, offset = None,plot=False):
-    audio_arr,sam_freq = lr.load(filename,duration = duration)
-    time_ref = np.arange(0,len(audio_arr))/sam_freq
-    if plot==True:
+
+#  audiofile read/plot method
+def read_audio(filename, duration=None, offset=None, plot=False):
+    audio_arr, sam_freq = lr.load(filename, duration=duration)
+    time_ref = np.arange(0, len(audio_arr)) / sam_freq
+    if plot == True:
         fig, ax = plt.subplots()
-        ax.plot(time_ref,audio_arr)
-        ax.set(xlabel='Time in [s]',ylabel='Amplitude')
+        ax.plot(time_ref, audio_arr)
+        ax.set(xlabel='Time in [s]', ylabel='Amplitude')
         ax.set_title('Audioclip')
         plt.show()
     return time_ref, audio_arr, sam_freq
 
-# plot and overlay harmonic percussive source separation 
-def plot_spectro(H,P,R,S):
-    fig_spectros,ax_spectros = plt.subplots(figsize=(16,12))
-    
-    plt.subplot(2,3,2)
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis = 'log', x_axis = 's', cmap = 'Reds'  )
+
+#  plot and overlay harmonic percussive source separation
+def plot_spectro(H, P, R, S):
+    fig_spectros, ax_spectros = plt.subplots(figsize=(16, 12))
+
+    plt.subplot(2, 3, 2)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis='log', x_axis='s', cmap='Reds')
     plt.title('Original Spectrogram')
 
-    plt.subplot(2,3,4)
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis = 'log', x_axis = 's', cmap = 'Reds'  )
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(H), ref=np.max), y_axis = 'log', x_axis = 's', cmap = blues_alpha)
+    plt.subplot(2, 3, 4)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis='log', x_axis='s', cmap='Reds')
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(H), ref=np.max), y_axis='log', x_axis='s', cmap=blues_alpha)
     plt.title('Harmonic Spectrogram (blue)')
 
-    plt.subplot(2,3,5)
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis = 'log',x_axis = 's', cmap = 'Reds' )
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(P), ref=np.max), y_axis = 'log',x_axis = 's', cmap = blues_alpha)
+    plt.subplot(2, 3, 5)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis='log', x_axis='s', cmap='Reds')
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(P), ref=np.max), y_axis='log', x_axis='s', cmap=blues_alpha)
     plt.title('Percussion Spectrogram (blue)')
 
-    plt.subplot(2,3,6)
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis = 'log',x_axis = 's', cmap = 'Reds' )
-    lrdisp.specshow(lr.amplitude_to_db(np.abs(R), ref=np.max), y_axis = 'log',x_axis = 's', cmap = blues_alpha)
+    plt.subplot(2, 3, 6)
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(S), ref=np.max), y_axis='log', x_axis='s', cmap='Reds')
+    lrdisp.specshow(lr.amplitude_to_db(np.abs(R), ref=np.max), y_axis='log', x_axis='s', cmap=blues_alpha)
     plt.title('Residual Spectrogram (blue)')
 
-# harmonic/percussive/residual relative energy density function    
-def rel_dens(s1,s2):
-    #skipping spectros 0 values because spectros = 0 -> H,P,R = 0 and gives nan 
+
+#  harmonic/percussive/residual relative energy density function
+def rel_dens(s1, s2):
+    # skipping spectros 0 values because spectros = 0 -> H,P,R = 0 and gives nan
     s2 = np.where(s2 == 0, np.mean(s2), s2)
-    rel_dens= sum(sum(abs(s1/s2)))/(s1.size)
+    rel_dens = sum(sum(abs(s1 / s2))) / (s1.size)
     return rel_dens
 
-# shortform function of the chromagram _cqt function
-def chroma_cqt(audio_sig,sam_freq,fmin,threshold = 0.0):
+
+#  shortform function of the chromagram _cqt function
+def chroma_cqt(audio_sig, sam_freq, fmin, threshold=0.0):
     hop_length = 512
-    cqt_chromagram = lr.feature.chroma_cqt(audio_sig, sr = sam_freq, hop_length = hop_length, threshold = threshold)
+    cqt_chromagram = lr.feature.chroma_cqt(audio_sig, sr=sam_freq, hop_length=hop_length, threshold=threshold)
     return cqt_chromagram
 
-# chromagram plot function
-def plot_chromas(cqt_chromagram,sam_freq):
+
+#  chromagram plot function
+def plot_chromas(cqt_chromagram, sam_freq):
     plt.figure()
-    ax = lrdisp.specshow(cqt_chromagram, sr=sam_freq, x_axis = 'time', y_axis = 'chroma',fmin = fmin, cmap = 'magma')
+    ax = lrdisp.specshow(cqt_chromagram, sr=sam_freq, x_axis='time', y_axis='chroma', fmin=fmin, cmap='magma')
     ax.set_title('Chromagram')
 
-# chromagram per note bar chart representing energy content per note    
-def bar_chromas(cqt_chromagram,sorted = False):
-    notes = [' C 1 ', ' C# 2 ', ' D 3 ', ' D# 4 ', ' E 5 ', ' F 6 ', ' F# 7 ', ' G 8 ', ' G# 9 ', ' A 10 ', ' A# 11 ', ' B 12 ']
-    fig_c = plt.figure(figsize=(10,10))
+
+#  chromagram per note bar chart representing energy content per note
+def bar_chromas(cqt_chromagram, sorted=False):
+    notes = [' C 1 ', ' C# 2 ', ' D 3 ', ' D# 4 ', ' E 5 ', ' F 6 ', ' F# 7 ', ' G 8 ', ' G# 9 ', ' A 10 ', ' A# 11 ',
+             ' B 12 ']
+    fig_c = plt.figure(figsize=(10, 10))
     ax_c = plt.axes()
     ax_c.autoscale()
     if sorted == False:
-        ax_c.bar(notes, np.sum(cqt_chromagram,1)/np.max(np.sum(cqt_chromagram,1)))
+        ax_c.bar(notes, np.sum(cqt_chromagram, 1) / np.max(np.sum(cqt_chromagram, 1)))
         ax_c.set_ylabel('Level')
         ax_c.set_title('Chromagram Levels Unsorted')
     else:
-        notes_ind = np.argsort(-np.sum(cqt_chromagram,1)/np.max(np.sum(cqt_chromagram,1)))
+        notes_ind = np.argsort(-np.sum(cqt_chromagram, 1) / np.max(np.sum(cqt_chromagram, 1)))
         print(notes_ind)
-        notes_sorted=[]
-        for count in range(0,12):
+        notes_sorted = []
+        for count in range(0, 12):
             print(notes[notes_ind[count]])
             notes_sorted.append(notes[notes_ind[count]])
-        levels =   np.sum(cqt_chromagram,1)/np.max(np.sum(cqt_chromagram,1))
+        levels = np.sum(cqt_chromagram, 1) / np.max(np.sum(cqt_chromagram, 1))
         print(notes_sorted)
-        ax_c.bar(notes_sorted, levels[np.argsort(-levels)] )
+        ax_c.bar(notes_sorted, levels[np.argsort(-levels)])
         ax_c.set_ylabel('Level')
         ax_c.set_title('Chromagram Levels Sorted')
 
-# harmonic order method which calculates a number representing harmonic content and distribution for each track
-# review code for efficiency improvement
-    
+
+#  harmonic order method which calculates a number representing harmonic content and distribution for each track
+
 def harm_order(cqt_chromas):
-    chroma_tot  = np.sum(cqt_chromas,1)
-    levels = np.sort(-1*chroma_tot)
-    levels_norm = -1*levels/np.max(np.abs(levels))
+    chroma_tot = np.sum(cqt_chromas, 1)
+    levels = np.sort(-1 * chroma_tot)
+    levels_norm = -1 * levels / np.max(np.abs(levels))
     level_diff = []
-    for i in range(1,len(levels_norm)):
-        level_diff.append(levels_norm[i-1]-levels_norm[i])
+    for i in range(1, len(levels_norm)):
+        level_diff.append(levels_norm[i - 1] - levels_norm[i])
     level_diff_avg = np.mean(level_diff)
     harm_id_ind = len(levels_norm)
     for i in range(len(level_diff)):
         if level_diff[i] >= level_diff_avg:
             harm_id_ind = i
-    argus = np.argsort(-1*chroma_tot)
-    argus = argus +1
-    harm_id = np.mean(np.multiply(argus[0:harm_id_ind],levels_norm[0:harm_id_ind]))
+    argus = np.argsort(-1 * chroma_tot)
+    argus = argus + 1
+    harm_id = np.mean(np.multiply(argus[0:harm_id_ind], levels_norm[0:harm_id_ind]))
     return harm_id
 
-# feature log dictionary initializer
-def make_dic(file_path,bpm,harm_dens, res_dens, perc_dens, harm_id, genre):
-    temp_dic = {'file_path' : file_path,
-                'bpm' : bpm,
-                'harm_dens' : harm_dens, 
-                'res_dens' : res_dens,
-                'perc_dens' : perc_dens,
-                'harm_id' : harm_id,
-                'genre' : genre
+
+#  feature log dictionary initializer
+def make_dic(file_path, bpm, harm_dens, res_dens, perc_dens, harm_id, genre):
+    temp_dic = {'file_path': file_path,
+                'bpm': bpm,
+                'harm_dens': harm_dens,
+                'res_dens': res_dens,
+                'perc_dens': perc_dens,
+                'harm_id': harm_id,
+                'genre': genre
                 }
     return temp_dic
 
-# plot rel_dens distribution result to ensure a meaningfull distribution after processing all files
-def plot_densdist(ind,harm_dens,res_dens,perc_dens):
-    fig_dens,ax_dens = plt.subplots()
-    plt.subplot(3,1,1)
-    plt.plot(ind,harm_dens,'b+')
-    
-    fig_dens,ax_dens = plt.subplots()
-    plt.subplot(3,1,1)
-    plt.plot(ind,res_dens,'r+')
-    
-    fig_dens,ax_dens = plt.subplots()
-    plt.subplot(3,1,1)
-    plt.plot(ind,perc_dens,'k+')
-    plt.show()
-    
 
-#%% file feature extraction 
-    
-# variable initialization
+#  plot rel_dens distribution result to ensure a meaningfull distribution after processing all files
+def plot_densdist(ind, harm_dens, res_dens, perc_dens):
+    fig_dens, ax_dens = plt.subplots()
+    plt.subplot(3, 1, 1)
+    plt.plot(ind, harm_dens, 'b+')
+
+    fig_dens, ax_dens = plt.subplots()
+    plt.subplot(3, 1, 1)
+    plt.plot(ind, res_dens, 'r+')
+
+    fig_dens, ax_dens = plt.subplots()
+    plt.subplot(3, 1, 1)
+    plt.plot(ind, perc_dens, 'k+')
+    plt.show()
+
+
+#  file feature extraction
+
+#  variable initialization
 file_pathlog = []
-audio_array=[]
+audio_array = []
 sam_freq = []
 time_ref = []
 spectros = []
 harmos = []
 percos = []
 resos = []
-
 
 bpm = []
 genre = []
@@ -179,63 +190,61 @@ cqt_chromas = []
 
 data = pd.DataFrame()
 
-# file processing settings
+#  file processing settings
 sample_duration = 20
 sample_offset = 5
 hpss_beta = 1.5
 fmin = lr.midi_to_hz(21)
 
-#for loop goes through files at file_path extracting and saving the features necessary
-for ind,file_path in enumerate(audio_files):
+#  loop goes through files at file_path extracting and saving the features necessary
+for ind, file_path in enumerate(audio_files):
     print('ind: ' + str(ind))
     print('file_path: ' + file_path)
-    #read audio file
+    #  read audio file
     file_pathlog.append(file_path)
-    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path,duration = sample_duration, offset = sample_offset, plot=True)
+    time_ref_tmp, audio_tmp, sam_freq_tmp = read_audio(file_path, duration=sample_duration, offset=sample_offset,
+                                                       plot=True)
     audio_array.append(audio_tmp)
     sam_freq.append(sam_freq_tmp)
     time_ref.append(time_ref_tmp)
-    
-    bpm.append(lr.beat.tempo(audio_tmp, sam_freq_tmp)) 
-    
-    #full signal spectrogram
-    spectros_tmp = lr.stft(audio_tmp, hop_length=512, n_fft=2048 )
+
+    bpm.append(lr.beat.tempo(audio_tmp, sam_freq_tmp))
+
+    #  full signal spectrogram
+    spectros_tmp = lr.stft(audio_tmp, hop_length=512, n_fft=2048)
     spectros.append(spectros_tmp)
-    
-    #harmonic percussion spectral separation
-    harmos_tmp, percos_tmp= lr.decompose.hpss(spectros_tmp, margin = hpss_beta)
-    resos_tmp = spectros_tmp - (harmos_tmp+percos_tmp)
+
+    #  harmonic percussion spectral separation
+    harmos_tmp, percos_tmp = lr.decompose.hpss(spectros_tmp, margin=hpss_beta)
+    resos_tmp = spectros_tmp - (harmos_tmp + percos_tmp)
     harmos.append(harmos_tmp)
     percos.append(percos_tmp)
     resos_tmp = spectros_tmp - (harmos_tmp + percos_tmp)
     resos.append(resos_tmp)
-    
-    #calculate respective densities
-    harm_dens.append(rel_dens(harmos_tmp,spectros_tmp))
-    perc_dens.append(rel_dens(percos_tmp,spectros_tmp))
-    res_dens.append(rel_dens(resos_tmp,spectros_tmp))
-    
-    #save constant q chromas
-    cqt_chromas.append(chroma_cqt(audio_tmp, sam_freq_tmp,fmin,threshold = 0 ))
-    plot_chromas(cqt_chromas[ind],sam_freq_tmp)
+
+    #  calculate respective densities
+    harm_dens.append(rel_dens(harmos_tmp, spectros_tmp))
+    perc_dens.append(rel_dens(percos_tmp, spectros_tmp))
+    res_dens.append(rel_dens(resos_tmp, spectros_tmp))
+
+    #  save constant q chromas
+    cqt_chromas.append(chroma_cqt(audio_tmp, sam_freq_tmp, fmin, threshold=0))
+    plot_chromas(cqt_chromas[ind], sam_freq_tmp)
     bar_chromas(cqt_chromas[ind])
-    #extract harm_id variable using harm_order
+    # extract harm_id variable using harm_order
     harm_id.append(harm_order(cqt_chromas[ind]))
 
-    #extract track genre label
+    #  extract track genre label
     audiofile = eyed3.load(file_path)
     genre.append(audiofile.tag.genre._name)
-    
-    #hpss plotting range t represents the time range to plot
-    range_t = range(300,473)
-#    plot_spectro(harmos_tmp[:,range_t],percos_tmp[:,range_t],resos_tmp[:,range_t], spectros_tmp[:,range_t])
-    
-    
-    
-#%% harm separation summary plot and data save
 
-data = pd.DataFrame(data = make_dic(file_pathlog, bpm, harm_dens, res_dens, perc_dens, harm_id, genre))
+    #  hpss plotting range t --> time range to plot
+    range_t = range(300, 473)
+
+
+#  harm separation summary plot and data save
+data = pd.DataFrame(data=make_dic(file_pathlog, bpm, harm_dens, res_dens, perc_dens, harm_id, genre))
 plot_densdist(data.index.tolist(), data['harm_dens'], data['res_dens'], data['perc_dens'])
 
-# save data to pickle file for 
+# save data to pickle file for
 data.to_pickle("./400files_percbaseddensities_v0.pkl")
