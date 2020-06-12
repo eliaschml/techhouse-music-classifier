@@ -1,32 +1,34 @@
-import joblib
+#  Electronic Music Classifier:
+#       split data into train test validate sets
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 
-#%% read feature-label dataset
+#  read feature-label dataset
 songs = pd.read_pickle("./400files_percbaseddensities_v0.pkl")
-songs=songs.replace(to_replace = 'Tech-house',value = 'House' )
+songs = songs.replace(to_replace='Tech-house', value='House')
 songs.head()
 
-#%% plot data distributions 
+#  plot data distributions
 plot_titles = ['Residual Density', 'Percussive Density', 'Harmonic Density', 'Harmonic Identity']
-for i,col in enumerate(['res_dens','perc_dens','harm_dens','harm_id']):
-    fig = plt.figure(figsize=(10,10))
+for i, col in enumerate(['res_dens', 'perc_dens', 'harm_dens', 'harm_id']):
+    fig = plt.figure(figsize=(10, 10))
     ax = plt.axes()
-    sns.catplot(x='genre', y=col, data = songs, kind = 'boxen',ax=ax)
+    sns.catplot(x='genre', y=col, data=songs, kind='boxen', ax=ax)
     ax.set_title(plot_titles[i])
 
-#%% clean and divide data into train,test, validation sets
-features = songs.drop(['file_path','genre'], axis =1)
+#  clean and divide data into train,test, validation sets
+features = songs.drop(['file_path', 'genre'], axis=1)
 labels = songs['genre']
 x_train, x_test, y_train, y_test = train_test_split(features, labels, test_size=0.4)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
-#check data lengths
+#  check data lengths
 for dataset in [y_train, y_val, y_test]:
     print(round(len(dataset), 2))
-    
+
 x_train.to_pickle("./train_features.pkl")
 x_test.to_pickle("./test_features.pkl")
 x_val.to_pickle("./val_features.pkl")
