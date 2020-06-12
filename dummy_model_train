@@ -1,17 +1,26 @@
-import pandas as pd 
+#  Electronic Music Classifier:
+#       dummy model training and validation code
+
+import pandas as pd
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import cross_val_score
 import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+#  import training features and labels
 tr_features = pd.read_pickle("./train_features.pkl")
 tr_labels = pd.read_pickle("./train_labels.pkl")
 
+#  import validation features and labels
 val_features = pd.read_pickle("./val_features.pkl")
 val_labels = pd.read_pickle("./val_features.pkl")
 
+#  implement dummy classifier to establish a performance benchmark
 dy = DummyClassifier() #stratified dummy model
 
+#  save dummy model performance metrics
 scores = cross_val_score(dy, tr_features, tr_labels,cv=5)
 
+#  print scores to evaluate dummy model performance
 print(scores)
