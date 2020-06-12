@@ -1,16 +1,20 @@
+#  Electronic Music Classifier:
+#       SVM model training code
+
 import joblib
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 import warnings
-import time
-t=time.time()
-warnings.filterwarnings('ignore', category=FutureWarning)
-warnings.filterwarnings('ignore',category=DeprecationWarning)
 
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+#  import training features and labels
 tr_features = pd.read_pickle('./train_features.pkl')
 tr_labels = pd.read_pickle('./train_labels.pkl')
 
+#  implement print results function
 def print_results(results):
     print('BEST PARAMS: {}\n'.format(results.best_params_))
 
@@ -18,28 +22,32 @@ def print_results(results):
     stds = results.cv_results_['std_test_score']
     for mean, std, params in zip(means, stds, results.cv_results_['params']):
         print('{} (+/-{}) for {}'.format(round(mean, 3), round(std * 2, 3), params))
-        
-svc=SVC()
-parameters = {
-        'C' : [1,10, 100],
-        'decision_function_shape':['ovo','ovr'],
-        'cache_size' : [200],
-        'class_weight' : [None],
-        'coef0' : [0.0],
-        'degree' : [3],
-        'gamma' : ['scale'],
-        'kernel' : ['poly'],
-        'probability' : [False],
-        'random_state' : [None],
-        'shrinking' : [True],
-        'tol' : [0.001] ,
-        'verbose' : [False]
-        }
 
-cv = GridSearchCV(svc, parameters,cv=5, verbose = 10)
+#  define model params for GridSearchCV
+svc = SVC()
+parameters = {
+    'C': [1, 10, 100],
+    'decision_function_shape': ['ovo', 'ovr'],
+    'cache_size': [200],
+    'class_weight': [None],
+    'coef0': [0.0],
+    'degree': [3],
+    'gamma': ['scale'],
+    'kernel': ['poly'],
+    'probability': [False],
+    'random_state': [None],
+    'shrinking': [True],
+    'tol': [0.001],
+    'verbose': [False]
+}
+
+#  implement and run GridSearchCV
+cv = GridSearchCV(svc, parameters, cv=5, verbose=10)
 cv.fit(tr_features, tr_labels.values.ravel())
 
+#  print GridSearchCV results for evaluation
 print_results(cv)
 
-cv.best_estimator_
-elapsed = time.time()-t
+
+#  save best estimator model to pkl file
+joblib.dump(cv.best_estimator_, './SVM_model.pkl')
