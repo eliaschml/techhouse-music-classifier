@@ -1,9 +1,11 @@
-# Validation 
+#  Electronic Music Classifier:
+#       GBT model validation code
+
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score,confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 
-#%% data import
+#  import data features and labels
 tr_features = pd.read_pickle('./train_features.pkl')
 tr_labels = pd.read_pickle('./train_labels.pkl')
 
@@ -13,32 +15,32 @@ val_labels = pd.read_pickle('./val_labels.pkl')
 te_features = pd.read_pickle('./test_features.pkl')
 te_labels = pd.read_pickle('./test_labels.pkl')
 
-#%% model definition and fit                           
-booster1 = GradientBoostingClassifier(max_depth = 3,n_estimators =10 )
+#  implement and fit models to validate
+booster1 = GradientBoostingClassifier(max_depth=3, n_estimators=10)
 booster1.fit(tr_features, tr_labels.values.ravel())
 
-booster2 = GradientBoostingClassifier(max_depth = 3,n_estimators =5 )
+booster2 = GradientBoostingClassifier(max_depth=3, n_estimators=5)
 booster2.fit(tr_features, tr_labels.values.ravel())
 
-booster3 = GradientBoostingClassifier(max_depth = 27,n_estimators =100 )
+booster3 = GradientBoostingClassifier(max_depth=27, n_estimators=100)
 booster3.fit(tr_features, tr_labels.values.ravel())
 
-#%% model validation & selection
+#  predict and evaluate labels from features
+#  extract precision, recall and confusion matrix as evaluation metrics
 for mdl in [booster1, booster2, booster3]:
     y_pred = mdl.predict(val_features)
     accuracy = accuracy_score(val_labels, y_pred)
     precision = precision_score(val_labels, y_pred, average=None)
     recall = recall_score(val_labels, y_pred, average=None)
-    conf_mat = confusion_matrix(val_labels, y_pred, labels = ["Techno","House","Breakbeat", "Ambient"])
-    print(' \n-- A: {} / P: {} / R: {}'.format(accuracy,precision, recall))
+    conf_mat = confusion_matrix(val_labels, y_pred, labels=["Techno", "House", "Breakbeat", "Ambient"])
+    print(' \n-- A: {} / P: {} / R: {}'.format(accuracy, precision, recall))
     print(conf_mat)
 
-#%% model testing 
-    
+#  test validated model and output final performance metrics
 y_pred = booster2.predict(te_features)
 accuracy = accuracy_score(te_labels, y_pred)
 precision = precision_score(te_labels, y_pred, average=None)
 recall = recall_score(te_labels, y_pred, average=None)
-conf_mat = confusion_matrix(te_labels, y_pred, labels = ["Techno","House","Breakbeat", "Ambient"])
-print(' \n-- A: {} / P: {} / R: {}'.format(accuracy,precision, recall))
-print(conf_mat) 
+conf_mat = confusion_matrix(te_labels, y_pred, labels=["Techno", "House", "Breakbeat", "Ambient"])
+print(' \n-- A: {} / P: {} / R: {}'.format(accuracy, precision, recall))
+print(conf_mat)
